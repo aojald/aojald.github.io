@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WOPR - WarGames Interactive Terminal</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .container {
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #0f0f23 70%, #000 100%);
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Ambient lighting effects */
+        .ambient-glow {
+            position: absolute;
+            width: 600px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0,255,0,0.1) 0%, transparent 70%);
+            animation: ambientPulse 4s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+
+        @keyframes ambientPulse {
+            0% { opacity: 0.3; transform: scale(0.8); }
+            100% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        .wopr-container {
+            transform: scale(1.5);
+            position: relative;
+            filter: drop-shadow(0 0 20px rgba(0,255,0,0.3));
+        }
+
+        .wopr {
+            width: 320px;
+            height: 200px;
+            position: relative;
+        }
+
+        /* Main body with enhanced metallic effect */
+        .body {
+            width: 320px;
+            height: 120px;
+            background: linear-gradient(145deg, #5a5a5a, #3a3a3a);
+            position: absolute;
+            bottom: 0;
+            box-shadow: 
+                inset 3px 3px 6px #7a7a7a,
+                inset -3px -3px 6px #1a1a1a,
+                0 0 20px rgba(0,0,0,0.5);
+            border-radius: 2px;
+        }
+
+        /* Left section with enhanced details */
+        .left-section {
+            width: 160px;
+            height: 80px;
+            background: linear-gradient(145deg, #4a4a4a, #2a2a2a);
+            position: absolute;
+            left: 8px;
+            top: 20px;
+            box-shadow: 
+                inset 2px 2px 4px #6a6a6a,
+                inset -2px -2px 4px #0a0a0a;
+            border-radius: 1px;
+        }
+
+        /* Enhanced main display with LED cell borders */
+        .main-display {
+            width: 140px;
+            height: 40px;
+            background: #000;
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            overflow: hidden;
+            border: 1px solid #333;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        /* Right section with additional details */
+        .right-section {
+            width: 80px;
+            height: 100px;
+            background: linear-gradient(145deg, #5a5a5a, #3a3a3a);
+            position: absolute;
+            right: 8px;
+            top: 0;
+            box-shadow: 
+                inset 3px 3px 6px #7a7a7a,
+                inset -3px -3px 6px #1a1a1a;
+            border-radius: 2px;
+        }
+
+        .small-display {
+            width: 60px;
+            height: 20px;
+            background: #000;
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            overflow: hidden;
+            border: 1px solid #333;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
+        }
+
+        /* Enhanced pixel dots with LED cell effect */
+        .pixel-dot {
+            width: 2px;
+            height: 2px;
+            position: absolute;
+            background: #ff0000;
+            transition: all 0.3s ease-in-out;
+            border-radius: 0.5px;
+            border: 0.2px solid rgba(0,0,0,0.3);
+        }
+
+        .pixel-dot.green { 
+            background: #00ff00; 
+            box-shadow: 0 0 4px #00ff00, 0 0 8px #00ff00;
+        }
+        .pixel-dot.yellow { 
+            background: #ffff00; 
+            box-shadow: 0 0 4px #ffff00, 0 0 8px #ffff00;
+        }
+        .pixel-dot.red { 
+            background: #ff0000; 
+            box-shadow: 0 0 4px #ff0000, 0 0 8px #ff0000;
+        }
+        .pixel-dot.white { 
+            background: #ffffff; 
+            box-shadow: 0 0 4px #ffffff, 0 0 8px #ffffff;
+        }
+
+        .pixel-dot.glider {
+            background: #00ff00 !important;
+            box-shadow: 0 0 8px #00ff00, 0 0 16px #00ff00, 0 0 24px #00ff00 !important;
+            opacity: 1 !important;
+        }
+
+        .pixel-dot.dead {
+            opacity: 0.1 !important;
+            background: #330000 !important;
+            box-shadow: none !important;
+        }
+
+        /* Hardware details */
+        .indicator-led {
+            width: 3px;
+            height: 3px;
+            background: #ff0000;
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 0 4px #ff0000;
+            animation: blink 2s infinite;
+        }
+
+        .indicator-led.green {
+            background: #00ff00;
+            box-shadow: 0 0 4px #00ff00;
+        }
+
+        .indicator-led.yellow {
+            background: #ffff00;
+            box-shadow: 0 0 4px #ffff00;
+        }
+
+        .led-1 { top: 5px; right: 5px; }
+        .led-2 { top: 5px; right: 15px; }
+        .led-3 { top: 15px; right: 5px; }
+
+        .switch {
+            width: 6px;
+            height: 3px;
+            background: #666;
+            position: absolute;
+            border-radius: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .switch:hover {
+            background: #888;
+        }
+
+        .switch.active {
+            background: #00ff00;
+            box-shadow: 0 0 4px #00ff00;
+        }
+
+        .switch-1 { bottom: 5px; right: 5px; }
+        .switch-2 { bottom: 5px; right: 15px; }
+
+        /* Ventilation grilles */
+        .vent {
+            position: absolute;
+            background: repeating-linear-gradient(
+                90deg,
+                #222 0px,
+                #222 1px,
+                transparent 1px,
+                transparent 3px
+            );
+            opacity: 0.7;
+        }
+
+        .vent-1 {
+            width: 20px;
+            height: 8px;
+            bottom: 25px;
+            left: 5px;
+        }
+
+        .vent-2 {
+            width: 15px;
+            height: 6px;
+            top: 35px;
+            right: 5px;
+        }
+
+        /* Enhanced compartments */
+        .compartment {
+            width: 70px;
+            height: 50px;
+            background: linear-gradient(145deg, #4a4a4a, #2a2a2a);
+            position: absolute;
+            bottom: 15px;
+            box-shadow: 
+                inset 2px 2px 4px #6a6a6a,
+                inset -2px -2px 4px #0a0a0a;
+            border-radius: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .compartment:hover {
+            box-shadow: 
+                inset 2px 2px 4px #6a6a6a,
+                inset -2px -2px 4px #0a0a0a,
+                0 0 10px rgba(0,255,0,0.3);
+        }
+
+        .compartment-left { left: 20px; }
+        .compartment-center { left: 100px; }
+        .compartment-right { right: 20px; }
+
+        /* Enhanced handles */
+        .handle {
+            width: 8px;
+            height: 8px;
+            background: linear-gradient(145deg, #3a3a3a, #1a1a1a);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 
+                inset 1px 1px 2px #5a5a5a,
+                inset -1px -1px 2px #0a0a0a;
+        }
+
+        /* Enhanced WOPR label */
+        .wopr-label {
+            position: absolute;
+            right: 15px;
+            bottom: 35px;
+            color: #cccccc;
+            font-size: 8px;
+            font-weight: bold;
+            text-shadow: 1px 1px 0 #000;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+            image-rendering: pixelated;
+        }
+
+        /* Enhanced feet */
+        .foot {
+            width: 12px;
+            height: 8px;
+            background: linear-gradient(145deg, #3a3a3a, #1a1a1a);
+            position: absolute;
+            bottom: -8px;
+            box-shadow: 
+                inset 1px 1px 2px #5a5a5a,
+                inset -1px -1px 2px #0a0a0a;
+            border-radius: 1px;
+        }
+
+        .foot-1 { left: 20px; }
+        .foot-2 { left: 80px; }
+        .foot-3 { right: 80px; }
+        .foot-4 { right: 20px; }
+
+        /* Enhanced title with pixelated effect */
+        .title {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ffff;
+            font-size: 28px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 6px;
+            text-shadow: 0 0 10px #00ffff;
+            animation: titleGlow 3s ease-in-out infinite alternate;
+            image-rendering: pixelated;
+            text-rendering: geometricPrecision;
+            cursor: pointer;
+        }
+
+        @keyframes titleGlow {
+            from { 
+                text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff; 
+                transform: translateX(-50%) scale(1);
+            }
+            to { 
+                text-shadow: 0 0 20px #00ffff, 0 0 30px #00ffff, 0 0 40px #00ffff; 
+                transform: translateX(-50%) scale(1.02);
+            }
+        }
+
+        .subtitle {
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff6600;
+            font-size: 10px;
+            text-align: center;
+            animation: subtitleFlicker 4s infinite;
+            cursor: pointer;
+        }
+
+        @keyframes subtitleFlicker {
+            0%, 90% { opacity: 1; }
+            95% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        /* Status and mode indicators */
+        .status-panel {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .status-item {
+            color: #00ff00;
+            font-size: 8px;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .defcon-level {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            color: #ff0000;
+            font-size: 8px;
+            font-weight: bold;
+            animation: defconBlink 1s infinite;
+        }
+
+        @keyframes defconBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        /* Interactive overlay */
+        .interactive-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .click-effect {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #00ff00;
+            border-radius: 50%;
+            animation: clickRipple 0.6s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes clickRipple {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(3);
+                opacity: 0;
+            }
+        }
+
+        /* Scrolling text overlay */
+        .scrolling-text {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            color: #00ff00;
+            font-size: 2px;
+            line-height: 3px;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .scrolling-text.active {
+            opacity: 0.8;
+        }
+
+        .text-line {
+            position: absolute;
+            white-space: nowrap;
+            animation: scrollText 8s linear infinite;
+        }
+
+        @keyframes scrollText {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* Game mode indicators */
+        .game-mode {
+            position: absolute;
+            bottom: -70px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffff00;
+            font-size: 8px;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .game-mode.active {
+            opacity: 1;
+            animation: modeFlash 0.5s ease-in-out;
+        }
+
+        @keyframes modeFlash {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.1); }
+        }
+
+        /* Sound control */
+        .sound-control {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 5px 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.3s;
+            z-index: 2000;
+        }
+
+        .sound-control:hover {
+            background: rgba(0,255,0,0.1);
+            box-shadow: 0 0 10px rgba(0,255,0,0.3);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .wopr-container {
+                transform: scale(1);
+            }
+            
+            .title {
+                font-size: 20px;
+                letter-spacing: 3px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .wopr-container {
+                transform: scale(0.8);
+            }
+            
+            .title {
+                font-size: 16px;
+                letter-spacing: 2px;
+            }
+        }
+
+        /* Animation classes */
+        .blink-fast { animation: blink 0.3s infinite; }
+        .blink-medium { animation: blink 1s infinite; }
+        .blink-slow { animation: blink 2s infinite; }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.2; }
+        }
+
+        /* CRT bloom effect */
+        .crt-bloom {
+            filter: blur(0.5px) brightness(1.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="sound-control" id="soundToggle">🔊 SOUND: ON</div>
+    
+    <div class="container">
+        <div class="ambient-glow"></div>
+        <div class="interactive-overlay" id="interactiveOverlay"></div>
+        
+        <div class="wopr-container">
+            <div class="title" id="titleElement">W.O.P.R.</div>
+            <div class="defcon-level" id="defconLevel">DEFCON 3</div>
+            
+            <div class="status-panel">
+                <div class="status-item">
+                    <div class="indicator-led green"></div>
+                    <span id="systemStatus">ONLINE</span>
+                </div>
+                <div class="status-item">
+                    <div class="indicator-led yellow blink-slow"></div>
+                    <span id="processingStatus">IDLE</span>
+                </div>
+            </div>
+            
+            <div class="wopr">
+                <!-- Main body -->
+                <div class="body">
+                    <!-- Hardware details -->
+                    <div class="indicator-led led-1"></div>
+                    <div class="indicator-led green led-2"></div>
+                    <div class="indicator-led yellow led-3 blink-medium"></div>
+                    
+                    <div class="switch switch-1" data-function="mode"></div>
+                    <div class="switch switch-2" data-function="reset"></div>
+                    
+                    <div class="vent vent-1"></div>
+                    <div class="vent vent-2"></div>
+                    
+                    <!-- Left section with main display -->
+                    <div class="left-section">
+                        <div class="main-display" id="mainDisplay">
+                            <div class="scrolling-text" id="scrollingText"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right section with small display -->
+                    <div class="right-section">
+                        <div class="small-display" id="smallDisplay"></div>
+                        
+                        <div class="wopr-label">
+                            WOPR<br>
+                            <span style="font-size: 6px; font-family: 'Courier New', monospace; letter-spacing: 1px; image-rendering: pixelated;">WAR OPERATION PLAN RESPONSE</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Storage compartments -->
+                    <div class="compartment compartment-left" data-game="tictactoe">
+                        <div class="handle"></div>
+                    </div>
+                    <div class="compartment compartment-center" data-game="life">
+                        <div class="handle"></div>
+                    </div>
+                    <div class="compartment compartment-right" data-game="nuclear">
+                        <div class="handle"></div>
+                    </div>
+                </div>
+                
+                <!-- Feet -->
+                <div class="foot foot-1"></div>
+                <div class="foot foot-2"></div>
+                <div class="foot foot-3"></div>
+                <div class="foot foot-4"></div>
+            </div>
+            
+            <div class="subtitle" id="subtitleElement">
+                "SHALL WE PLAY A GAME?"
+            </div>
+            
+            <div class="game-mode" id="gameMode"></div>
+        </div>
+    </div>
+
+    <script>
+        // Audio system
+        class AudioSystem {
+            constructor() {
+                this.enabled = true;
+                this.context = null;
+                this.init();
+            }
+            
+            init() {
+                try {
+                    this.context = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.log('Audio not supported');
+                    this.enabled = false;
+                }
+            }
+            
+            beep(frequency = 800, duration = 100, volume = 0.1) {
+                if (!this.enabled || !this.context) return;
+                
+                const oscillator = this.context.createOscillator();
+                const gainNode = this.context.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.context.destination);
+                
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'square';
+                
+                gainNode.gain.setValueAtTime(0, this.context.currentTime);
+                gainNode.gain.linearRampToValueAtTime(volume, this.context.currentTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, this.context.currentTime + duration / 1000);
+                
+                oscillator.start(this.context.currentTime);
+                oscillator.stop(this.context.currentTime + duration / 1000);
+            }
+            
+            click() { this.beep(1200, 50, 0.05); }
+            error() { this.beep(300, 200, 0.1); }
+            success() { this.beep(800, 100, 0.08); this.beep(1000, 100, 0.08); }
+            startup() { 
+                this.beep(400, 100, 0.1);
+                setTimeout(() => this.beep(600, 100, 0.1), 150);
+                setTimeout(() => this.beep(800, 150, 0.1), 300);
+            }
+        }
+
+        // Enhanced Pixel Display with LED cell effects
+        class PixelDisplay {
+            constructor(container, width, height) {
+                this.container = container;
+                this.width = width;
+                this.height = height;
+                this.cols = Math.floor(width / 3);
+                this.rows = Math.floor(height / 3);
+                this.grid = [];
+                this.pixels = [];
+                this.deadPixels = new Set();
+                this.init();
+                this.generateDeadPixels();
+            }
+            
+            init() {
+                this.container.innerHTML = '';
+                this.grid = Array(this.rows).fill().map(() => Array(this.cols).fill(0));
+                this.pixels = [];
+                
+                for (let y = 0; y < this.rows; y++) {
+                    this.pixels[y] = [];
+                    for (let x = 0; x < this.cols; x++) {
+                        const dot = document.createElement('div');
+                        dot.className = 'pixel-dot';
+                        dot.style.left = (x * 3) + 'px';
+                        dot.style.top = (y * 3) + 'px';
+                        dot.style.opacity = '0';
+                        this.container.appendChild(dot);
+                        this.pixels[y][x] = dot;
+                    }
+                }
+            }
+            
+            generateDeadPixels() {
+                // Add some dead pixels for realism
+                const deadCount = Math.floor(this.cols * this.rows * 0.02); // 2% dead pixels
+                for (let i = 0; i < deadCount; i++) {
+                    const x = Math.floor(Math.random() * this.cols);
+                    const y = Math.floor(Math.random() * this.rows);
+                    this.deadPixels.add(`${x},${y}`);
+                }
+            }
+            
+            setPixel(x, y, color, brightness = 1, isSpecial = false) {
+                if (x >= 0 && x < this.cols && y >= 0 && y < this.rows) {
+                    const pixel = this.pixels[y][x];
+                    const isDead = this.deadPixels.has(`${x},${y}`);
+                    
+                    if (isDead && !isSpecial) {
+                        pixel.className = 'pixel-dot dead';
+                        return;
+                    }
+                    
+                    pixel.className = `pixel-dot ${color}`;
+                    if (isSpecial) {
+                        pixel.classList.add('glider');
+                    }
+                    pixel.style.opacity = brightness;
+                    this.grid[y][x] = brightness > 0 ? 1 : 0;
+                }
+            }
+            
+            clearPixel(x, y) {
+                if (x >= 0 && x < this.cols && y >= 0 && y < this.rows) {
+                    const pixel = this.pixels[y][x];
+                    pixel.style.opacity = '0';
+                    pixel.className = 'pixel-dot';
+                    this.grid[y][x] = 0;
+                }
+            }
+            
+            fillRandom(colors, density = 0.3) {
+                for (let y = 0; y < this.rows; y++) {
+                    for (let x = 0; x < this.cols; x++) {
+                        if (Math.random() < density) {
+                            const color = colors[Math.floor(Math.random() * colors.length)];
+                            const brightness = 0.6 + Math.random() * 0.4;
+                            this.setPixel(x, y, color, brightness);
+                        } else {
+                            this.clearPixel(x, y);
+                        }
+                    }
+                }
+            }
+            
+            smoothColorTransition() {
+                for (let y = 0; y < this.rows; y++) {
+                    for (let x = 0; x < this.cols; x++) {
+                        const pixel = this.pixels[y][x];
+                        if (this.grid[y][x] > 0 && Math.random() < 0.15) {
+                            const colors = ['red', 'yellow', 'green'];
+                            const currentColor = pixel.classList.contains('red') ? 'red' : 
+                                               pixel.classList.contains('yellow') ? 'yellow' : 
+                                               'green';
+                            let newColor;
+                            do {
+                                newColor = colors[Math.floor(Math.random() * colors.length)];
+                            } while (newColor === currentColor);
+                            
+                            pixel.className = `pixel-dot ${newColor}`;
+                            const brightness = 0.7 + Math.random() * 0.3;
+                            pixel.style.opacity = brightness;
+                        }
+                    }
+                }
+            }
+            
+            drawText(text, startX = 0, startY = 0, color = 'green') {
+                const chars = {
+                    'A': [[0,1,0],[1,0,1],[1,1,1],[1,0,1],[1,0,1]],
+                    'B': [[1,1,0],[1,0,1],[1,1,0],[1,0,1],[1,1,0]],
+                    'C': [[0,1,1],[1,0,0],[1,0,0],[1,0,0],[0,1,1]],
+                    'D': [[1,1,0],[1,0,1],[1,0,1],[1,0,1],[1,1,0]],
+                    'E': [[1,1,1],[1,0,0],[1,1,0],[1,0,0],[1,1,1]],
+                    'F': [[1,1,1],[1,0,0],[1,1,0],[1,0,0],[1,0,0]],
+                    'G': [[0,1,1],[1,0,0],[1,0,1],[1,0,1],[0,1,1]],
+                    'H': [[1,0,1],[1,0,1],[1,1,1],[1,0,1],[1,0,1]],
+                    'I': [[1,1,1],[0,1,0],[0,1,0],[0,1,0],[1,1,1]],
+                    'L': [[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,1,1]],
+                    'M': [[1,0,1],[1,1,1],[1,1,1],[1,0,1],[1,0,1]],
+                    'N': [[1,0,1],[1,1,1],[1,1,1],[1,0,1],[1,0,1]],
+                    'O': [[0,1,0],[1,0,1],[1,0,1],[1,0,1],[0,1,0]],
+                    'P': [[1,1,0],[1,0,1],[1,1,0],[1,0,0],[1,0,0]],
+                    'R': [[1,1,0],[1,0,1],[1,1,0],[1,0,1],[1,0,1]],
+                    'S': [[0,1,1],[1,0,0],[0,1,0],[0,0,1],[1,1,0]],
+                    'T': [[1,1,1],[0,1,0],[0,1,0],[0,1,0],[0,1,0]],
+                    'U': [[1,0,1],[1,0,1],[1,0,1],[1,0,1],[0,1,0]],
+                    'W': [[1,0,1],[1,0,1],[1,1,1],[1,1,1],[1,0,1]],
+                    'Y': [[1,0,1],[1,0,1],[0,1,0],[0,1,0],[0,1,0]],
+                    ' ': [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]
+                };
+                
+                let currentX = startX;
+                for (let char of text.toUpperCase()) {
+                    if (chars[char]) {
+                        const pattern = chars[char];
+                        for (let y = 0; y < pattern.length; y++) {
+                            for (let x = 0; x < pattern[y].length; x++) {
+                                if (pattern[y][x] === 1) {
+                                    this.setPixel(currentX + x, startY + y, color, 1);
+                                }
+                            }
+                        }
+                        currentX += 4; // Space between characters
+                    }
+                }
+            }
+            
+            animate() {
+                const time = Date.now() / 1000;
+                
+                // Smooth color transitions in normal mode
+                if (!this.container.id || this.container.id === 'mainDisplay') {
+                    const hasSpecial = Array.from(this.container.querySelectorAll('.pixel-dot')).some(p => 
+                        p.classList.contains('glider') || p.classList.contains('text-pixel'));
+                    if (!hasSpecial) {
+                        this.smoothColorTransition();
+                    }
+                }
+                
+                // Enhanced flickering with CRT-like effects
+                for (let y = 0; y < this.rows; y++) {
+                    for (let x = 0; x < this.cols; x++) {
+                        const pixel = this.pixels[y][x];
+                        if (pixel.classList.contains('glider')) continue;
+                        
+                        if (this.grid[y][x] > 0) {
+                            const flicker = 0.8 + Math.sin(time * 3 + x * 0.5 + y * 0.3) * 0.2;
+                            const brightness = Math.max(0.4, flicker * this.grid[y][x]);
+                            pixel.style.opacity = brightness;
+                            
+                            // Occasional bloom effect
+                            if (Math.random() < 0.001) {
+                                pixel.classList.add('crt-bloom');
+                                setTimeout(() => pixel.classList.remove('crt-bloom'), 100);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Enhanced Game of Life with multiple patterns
+        class GameOfLife {
+            constructor(display) {
+                this.display = display;
+                this.patterns = {
+                    glider: [[0,1,0], [0,0,1], [1,1,1]],
+                    blinker: [[1,1,1]],
+                    toad: [[0,1,1,1], [1,1,1,0]],
+                    beacon: [[1,1,0,0], [1,1,0,0], [0,0,1,1], [0,0,1,1]]
+                };
+                this.currentPattern = 'glider';
+                this.x = 2;
+                this.y = 2;
+                this.phase = 0;
+                this.active = false;
+                this.interval = null;
+                this.previousCells = [];
+            }
+            
+            start(pattern = 'glider') {
+                if (this.active) return;
+                
+                this.active = true;
+                this.currentPattern = pattern;
+                this.x = 2;
+                this.y = 2;
+                this.phase = 0;
+                this.previousCells = [];
+                
+                this.display.fillRandom(['red'], 0.03);
+                
+                audio.success();
+                
+                this.interval = setInterval(() => {
+                    this.update();
+                }, 400);
+            }
+            
+            stop() {
+                if (!this.active) return;
+                
+                this.active = false;
+                if (this.interval) {
+                    clearInterval(this.interval);
+                    this.interval = null;
+                }
+                
+                this.clearPrevious();
+                this.display.fillRandom(['red', 'yellow', 'green', 'blue'], 0.6);
+            }
+            
+            clearPrevious() {
+                this.previousCells.forEach(([x, y]) => {
+                    this.display.clearPixel(x, y);
+                });
+                this.previousCells = [];
+            }
+            
+            update() {
+                this.clearPrevious();
+                
+                const pattern = this.patterns[this.currentPattern];
+                
+                pattern.forEach((row, dy) => {
+                    row.forEach((cell, dx) => {
+                        if (cell === 1) {
+                            const pixelX = this.x + dx;
+                            const pixelY = this.y + dy;
+                            this.display.setPixel(pixelX, pixelY, 'green', 1, true);
+                            this.previousCells.push([pixelX, pixelY]);
+                        }
+                    });
+                });
+                
+                this.phase = (this.phase + 1) % 4;
+                if (this.phase === 0) {
+                    this.x += 1;
+                    if (this.x > this.display.cols - 4) {
+                        this.x = 1;
+                        this.y = 2 + Math.floor(Math.random() * (this.display.rows - 6));
+                    }
+                }
+            }
+        }
+
+        // Tic-tac-toe game
+        class TicTacToe {
+            constructor(display) {
+                this.display = display;
+                this.board = Array(9).fill(0);
+                this.currentPlayer = 1;
+                this.active = false;
+                this.gameOver = false;
+            }
+            
+            start() {
+                if (this.active) return;
+                
+                this.active = true;
+                this.gameOver = false;
+                this.board = Array(9).fill(0);
+                this.currentPlayer = 1;
+                
+                this.display.init();
+                this.drawBoard();
+                
+                audio.startup();
+                updateGameMode('TIC-TAC-TOE ACTIVE');
+            }
+            
+            drawBoard() {
+                // Draw grid
+                for (let i = 0; i < this.display.rows; i++) {
+                    this.display.setPixel(4, i, 'white', 0.5);
+                    this.display.setPixel(8, i, 'white', 0.5);
+                }
+                for (let i = 0; i < this.display.cols; i++) {
+                    this.display.setPixel(i, 4, 'white', 0.5);
+                    this.display.setPixel(i, 8, 'white', 0.5);
+                }
+                
+                // Draw X's and O's
+                for (let i = 0; i < 9; i++) {
+                    if (this.board[i] !== 0) {
+                        const x = (i % 3) * 4 + 1;
+                        const y = Math.floor(i / 3) * 4 + 1;
+                        
+                        if (this.board[i] === 1) {
+                            // Draw X
+                            this.display.setPixel(x, y, 'red', 1);
+                            this.display.setPixel(x+1, y+1, 'red', 1);
+                            this.display.setPixel(x+2, y+2, 'red', 1);
+                            this.display.setPixel(x+2, y, 'red', 1);
+                            this.display.setPixel(x+1, y+1, 'red', 1);
+                            this.display.setPixel(x, y+2, 'red', 1);
+                        } else {
+                            // Draw O
+                            this.display.setPixel(x+1, y, 'yellow', 1);
+                            this.display.setPixel(x, y+1, 'yellow', 1);
+                            this.display.setPixel(x+2, y+1, 'yellow', 1);
+                            this.display.setPixel(x+1, y+2, 'yellow', 1);
+                        }
+                    }
+                }
+            }
+            
+            makeMove(position) {
+                if (!this.active || this.gameOver || this.board[position] !== 0) return false;
+                
+                this.board[position] = this.currentPlayer;
+                this.drawBoard();
+                
+                if (this.checkWin()) {
+                    this.gameOver = true;
+                    audio.success();
+                    setTimeout(() => this.stop(), 3000);
+                    return true;
+                }
+                
+                this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
+                audio.click();
+                
+                // AI move
+                if (this.currentPlayer === 2) {
+                    setTimeout(() => this.aiMove(), 500);
+                }
+                
+                return true;
+            }
+            
+            aiMove() {
+                const available = this.board.map((cell, index) => cell === 0 ? index : null).filter(x => x !== null);
+                if (available.length > 0) {
+                    const move = available[Math.floor(Math.random() * available.length)];
+                    this.makeMove(move);
+                }
+            }
+            
+            checkWin() {
+                const lines = [
+                    [0,1,2], [3,4,5], [6,7,8],
+                    [0,3,6], [1,4,7], [2,5,8],
+                    [0,4,8], [2,4,6]
+                ];
+                
+                return lines.some(line => {
+                    const [a,b,c] = line;
+                    return this.board[a] && this.board[a] === this.board[b] && this.board[a] === this.board[c];
+                });
+            }
+            
+            stop() {
+                this.active = false;
+                this.gameOver = false;
+                updateGameMode('');
+            }
+        }
+
+        // Nuclear countdown simulation
+        class NuclearCountdown {
+            constructor(display) {
+                this.display = display;
+                this.active = false;
+                this.countdown = 10;
+                this.interval = null;
+            }
+            
+            start() {
+                if (this.active) return;
+                
+                this.active = true;
+                this.countdown = 10;
+                
+                this.display.init();
+                updateDefcon(1);
+                updateGameMode('NUCLEAR COUNTDOWN INITIATED');
+                
+                audio.error();
+                
+                this.interval = setInterval(() => {
+                    this.update();
+                }, 1000);
+            }
+            
+            update() {
+                this.display.init();
+                
+                // Flash red
+                if (this.countdown % 2 === 0) {
+                    this.display.fillRandom(['red'], 0.8);
+                } else {
+                    this.display.fillRandom(['yellow'], 0.6);
+                }
+                
+                // Draw countdown number
+                const numberPatterns = {
+                    0: [[1,1,1],[1,0,1],[1,0,1],[1,0,1],[1,1,1]],
+                    1: [[0,1,0],[1,1,0],[0,1,0],[0,1,0],[1,1,1]],
+                    2: [[1,1,1],[0,0,1],[1,1,1],[1,0,0],[1,1,1]],
+                    3: [[1,1,1],[0,0,1],[1,1,1],[0,0,1],[1,1,1]],
+                    4: [[1,0,1],[1,0,1],[1,1,1],[0,0,1],[0,0,1]],
+                    5: [[1,1,1],[1,0,0],[1,1,1],[0,0,1],[1,1,1]],
+                    6: [[1,1,1],[1,0,0],[1,1,1],[1,0,1],[1,1,1]],
+                    7: [[1,1,1],[0,0,1],[0,0,1],[0,0,1],[0,0,1]],
+                    8: [[1,1,1],[1,0,1],[1,1,1],[1,0,1],[1,1,1]],
+                    9: [[1,1,1],[1,0,1],[1,1,1],[0,0,1],[1,1,1]]
+                };
+                
+                const pattern = numberPatterns[this.countdown];
+                if (pattern) {
+                    const startX = Math.floor(this.display.cols / 2) - 1;
+                    const startY = Math.floor(this.display.rows / 2) - 2;
+                    
+                    pattern.forEach((row, y) => {
+                        row.forEach((cell, x) => {
+                            if (cell === 1) {
+                                this.display.setPixel(startX + x, startY + y, 'white', 1, true);
+                            }
+                        });
+                    });
+                }
+                
+                audio.beep(800 - this.countdown * 50, 100, 0.1);
+                
+                this.countdown--;
+                
+                if (this.countdown < 0) {
+                    this.stop();
+                }
+            }
+            
+            stop() {
+                this.active = false;
+                if (this.interval) {
+                    clearInterval(this.interval);
+                    this.interval = null;
+                }
+                
+                updateDefcon(3);
+                updateGameMode('COUNTDOWN ABORTED');
+                
+                setTimeout(() => {
+                    updateGameMode('');
+                    mainDisplay.fillRandom(['red', 'yellow', 'green'], 0.6);
+                }, 2000);
+            }
+        }
+
+        // Initialize systems
+        const audio = new AudioSystem();
+        
+        const mainDisplay = new PixelDisplay(
+            document.getElementById('mainDisplay'), 
+            140, 40
+        );
+        
+        const smallDisplay = new PixelDisplay(
+            document.getElementById('smallDisplay'), 
+            60, 20
+        );
+        
+        const gameOfLife = new GameOfLife(mainDisplay);
+        const ticTacToe = new TicTacToe(mainDisplay);
+        const nuclearCountdown = new NuclearCountdown(mainDisplay);
+        
+        // UI update functions
+        function updateGameMode(text) {
+            const gameMode = document.getElementById('gameMode');
+            gameMode.textContent = text;
+            gameMode.className = text ? 'game-mode active' : 'game-mode';
+        }
+        
+        function updateDefcon(level) {
+            const defconElement = document.getElementById('defconLevel');
+            defconElement.textContent = `DEFCON ${level}`;
+            defconElement.style.color = level <= 2 ? '#ff0000' : level === 3 ? '#ffff00' : '#00ff00';
+        }
+        
+        function createClickEffect(x, y) {
+            const effect = document.createElement('div');
+            effect.className = 'click-effect';
+            effect.style.left = (x - 10) + 'px';
+            effect.style.top = (y - 10) + 'px';
+            
+            document.getElementById('interactiveOverlay').appendChild(effect);
+            
+            setTimeout(() => {
+                effect.remove();
+            }, 600);
+        }
+        
+        function showScrollingText(messages) {
+            const scrollingText = document.getElementById('scrollingText');
+            scrollingText.innerHTML = '';
+            scrollingText.classList.add('active');
+            
+            messages.forEach((message, index) => {
+                const line = document.createElement('div');
+                line.className = 'text-line';
+                line.textContent = message;
+                line.style.top = (index * 4) + 'px';
+                line.style.animationDelay = (index * 0.5) + 's';
+                scrollingText.appendChild(line);
+            });
+            
+            setTimeout(() => {
+                scrollingText.classList.remove('active');
+            }, 8000);
+        }
+        
+        // Event handlers
+        document.addEventListener('click', (e) => {
+            createClickEffect(e.clientX, e.clientY);
+            audio.click();
+        });
+        
+        // Sound toggle
+        document.getElementById('soundToggle').addEventListener('click', (e) => {
+            e.stopPropagation();
+            audio.enabled = !audio.enabled;
+            e.target.textContent = audio.enabled ? '🔊 SOUND: ON' : '🔇 SOUND: OFF';
+        });
+        
+        // Title interactions
+        document.getElementById('titleElement').addEventListener('click', (e) => {
+            e.stopPropagation();
+            showScrollingText([
+                'GREETINGS PROFESSOR FALKEN',
+                'HOW ABOUT A NICE GAME OF CHESS?',
+                'WOULD YOU LIKE TO PLAY A GAME?',
+                'THE ONLY WINNING MOVE IS NOT TO PLAY'
+            ]);
+            audio.startup();
+        });
+        
+        // Subtitle interactions
+        document.getElementById('subtitleElement').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const games = ['CHESS', 'POKER', 'FIGHTER COMBAT', 'GUERRILLA ENGAGEMENT', 'DESERT WARFARE', 'AIR-TO-AIR COMBAT', 'THEATERWIDE TACTICAL WARFARE', 'GLOBAL THERMONUCLEAR WAR'];
+            const randomGame = games[Math.floor(Math.random() * games.length)];
+            showScrollingText([
+                'AVAILABLE GAMES:',
+                ...games.slice(0, 4),
+                `SELECTED: ${randomGame}`,
+                'SHALL WE PLAY A GAME?'
+            ]);
+        });
+        
+        // Switch interactions
+        document.querySelectorAll('.switch').forEach(switchEl => {
+            switchEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                switchEl.classList.toggle('active');
+                
+                if (switchEl.dataset.function === 'mode') {
+                    if (switchEl.classList.contains('active')) {
+                        gameOfLife.start();
+                    } else {
+                        gameOfLife.stop();
+                    }
+                } else if (switchEl.dataset.function === 'reset') {
+                    // Reset all systems
+                    gameOfLife.stop();
+                    ticTacToe.stop();
+                    nuclearCountdown.stop();
+                    mainDisplay.fillRandom(['red', 'yellow', 'green'], 0.6);
+                    updateDefcon(3);
+                    updateGameMode('SYSTEM RESET');
+                    setTimeout(() => updateGameMode(''), 2000);
+                }
+                
+                audio.click();
+            });
+        });
+        
+        // Compartment interactions
+        document.querySelectorAll('.compartment').forEach(compartment => {
+            compartment.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                const game = compartment.dataset.game;
+                
+                // Stop all other games first
+                gameOfLife.stop();
+                ticTacToe.stop();
+                nuclearCountdown.stop();
+                
+                switch (game) {
+                    case 'tictactoe':
+                        ticTacToe.start();
+                        break;
+                    case 'life':
+                        gameOfLife.start();
+                        break;
+                    case 'nuclear':
+                        nuclearCountdown.start();
+                        break;
+                }
+                
+                audio.success();
+            });
+        });
+        
+        // Main display click for tic-tac-toe
+        document.getElementById('mainDisplay').addEventListener('click', (e) => {
+            if (ticTacToe.active && !ticTacToe.gameOver) {
+                e.stopPropagation();
+                const rect = e.target.getBoundingClientRect();
+                const x = Math.floor((e.clientX - rect.left) / (rect.width / 3));
+                const y = Math.floor((e.clientY - rect.top) / (rect.height / 3));
+                const position = y * 3 + x;
+                
+                if (position >= 0 && position < 9) {
+                    ticTacToe.makeMove(position);
+                }
+            }
+        });
+        
+        // Initialize displays
+        mainDisplay.fillRandom(['red', 'yellow', 'green'], 0.6);
+        smallDisplay.fillRandom(['red', 'yellow'], 0.7);
+        
+        // Animation loop
+        function animate() {
+            mainDisplay.animate();
+            smallDisplay.animate();
+            requestAnimationFrame(animate);
+        }
+        animate();
+        
+        // Periodic updates
+        function updateSmallDisplay() {
+            if (!gameOfLife.active && !ticTacToe.active && !nuclearCountdown.active) {
+                smallDisplay.fillRandom(['red', 'yellow'], 0.7);
+            }
+        }
+        
+        function randomGameOfLife() {
+            if (!gameOfLife.active && !ticTacToe.active && !nuclearCountdown.active && Math.random() > 0.8) {
+                gameOfLife.start();
+                setTimeout(() => {
+                    gameOfLife.stop();
+                }, 8000 + Math.random() * 5000);
+            }
+        }
+        
+        // Schedule updates
+        setInterval(updateSmallDisplay, 2000);
+        setInterval(randomGameOfLife, 10000);
+        
+        // Random display effects
+        setInterval(() => {
+            const displays = [mainDisplay.container, smallDisplay.container];
+            displays.forEach(display => {
+                if (Math.random() > 0.98) {
+                    display.style.opacity = '0.7';
+                    setTimeout(() => {
+                        display.style.opacity = '1';
+                    }, 50);
+                }
+            });
+        }, 200);
+        
+        // Startup sequence
+        setTimeout(() => {
+            audio.startup();
+            showScrollingText([
+                'WOPR SYSTEM ONLINE',
+                'INITIALIZING DEFENSE PROTOCOLS',
+                'READY FOR OPERATION',
+                'SHALL WE PLAY A GAME?'
+            ]);
+        }, 1000);
+        
+        // Periodic status updates
+        setInterval(() => {
+            const statuses = ['SCANNING', 'ANALYZING', 'MONITORING', 'IDLE', 'PROCESSING'];
+            const status = statuses[Math.floor(Math.random() * statuses.length)];
+            document.getElementById('processingStatus').textContent = status;
+        }, 5000);
+        
+        // Random DEFCON changes
+        setInterval(() => {
+            if (!nuclearCountdown.active && Math.random() > 0.95) {
+                const levels = [2, 3, 4];
+                const level = levels[Math.floor(Math.random() * levels.length)];
+                updateDefcon(level);
+                
+                setTimeout(() => {
+                    updateDefcon(3);
+                }, 3000);
+            }
+        }, 15000);
+    </script>
+</body>
+</html>
